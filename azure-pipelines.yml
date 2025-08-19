@@ -1,19 +1,37 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
-- main
+  - main   # Runs pipeline when code is pushed to main branch
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'   # Agent pool (Microsoft-hosted Ubuntu VM)
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+stages:
+- stage: Build
+  displayName: "Build Stage"
+  jobs:
+  - job: BuildJob
+    displayName: "Build the application"
+    steps:
+      - script: echo "Restoring dependencies..."
+        displayName: "Restore Dependencies"
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+      - script: echo "Building the project..."
+        displayName: "Build Project"
+
+      - script: echo "Running tests..."
+        displayName: "Run Unit Tests"
+
+      - script: echo "Packaging application..."
+        displayName: "Package Application"
+
+- stage: PreProduction
+  displayName: "PreProduction Stage"
+  dependsOn: Build   # Ensures Build runs before PreProduction
+  jobs:
+  - job: PreProdJob
+    displayName: "Deploy to PreProduction"
+    steps:
+      - script: echo "Deploying to PreProduction environment..."
+        displayName: "Deploy"
+
+      - script: echo "Running sanity checks in PreProduction..."
+        displayName: "Run PreProduction Tests"
