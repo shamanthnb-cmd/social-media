@@ -1,37 +1,49 @@
 trigger:
-  - main   # Runs pipeline when code is pushed to main branch
+- main   # pipeline runs when code is pushed to main branch
 
 pool:
-  vmImage: 'ubuntu-latest'   # Agent pool (Microsoft-hosted Ubuntu VM)
+  vmImage: 'ubuntu-latest'
 
 stages:
+# -------------------------
+# 1. BUILD STAGE
+# -------------------------
 - stage: Build
   displayName: "Build Stage"
   jobs:
   - job: BuildJob
-    displayName: "Build the application"
+    displayName: "Build Application"
     steps:
-      - script: echo "Restoring dependencies..."
-        displayName: "Restore Dependencies"
+      - script: echo "Building the application..."
+        displayName: "Run build steps"
 
-      - script: echo "Building the project..."
-        displayName: "Build Project"
-
-      - script: echo "Running tests..."
-        displayName: "Run Unit Tests"
-
-      - script: echo "Packaging application..."
-        displayName: "Package Application"
-
+# -------------------------
+# 2. PRE-PRODUCTION STAGE
+# -------------------------
 - stage: PreProduction
-  displayName: "PreProduction Stage"
-  dependsOn: Build   # Ensures Build runs before PreProduction
+  displayName: "Pre-Production Stage"
+  dependsOn: Build
   jobs:
-  - job: PreProdJob
-    displayName: "Deploy to PreProduction"
+  - job: DeployPreProd
+    displayName: "Deploy to Pre-Production"
     steps:
-      - script: echo "Deploying to PreProduction environment..."
-        displayName: "Deploy"
+      - script: echo "Deploying to Pre-Production environment..."
+        displayName: "Deploy application"
 
-      - script: echo "Running sanity checks in PreProduction..."
-        displayName: "Run PreProduction Tests"
+# -------------------------
+# 3. PRODUCTION STAGE
+# -------------------------
+- stage: Production
+  displayName: "Production Stage"
+  dependsOn: PreProduction
+  condition: succeeded()   # only runs if PreProd succeeds
+  jobs:
+  - deployment: DeployProd
+    displayName: "Deploy to Production"
+    environment: "production"   # requires manual approval in Azure DevOps Environments
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - script: echo "Deploying to Production environment..."
+              displayName: "Deploy application to Prod"
